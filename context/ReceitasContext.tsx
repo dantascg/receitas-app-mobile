@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-// formato da receita
 export type Receita = {
   id: string;
   nome: string;
@@ -17,6 +16,7 @@ type ReceitasContextData = {
   receitas: Receita[];
   adicionarReceita: (receita: Omit<Receita, 'id'>) => Promise<void>;
   removerReceita: (id: string) => Promise<void>;
+  atualizarReceita: (id: string, dadosAtualizados: Partial<Omit<Receita, 'id'>>) => Promise<void>;
 };
 
 const ReceitasContext = createContext<ReceitasContextData>({} as ReceitasContextData);
@@ -26,36 +26,43 @@ export function ReceitasProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function loadData() {
-      const dados = await AsyncStorage.getItem('@minhas_receitas');
-      if (dados) {
-        setReceitas(JSON.parse(dados));
-      }
+      try {
+        const dados = await AsyncStorage.getItem('@minhas_receitas');
+        if (dados) setReceitas(JSON.parse(dados));
+      } catch (error) { console.error(error); }
     }
     loadData();
   }, []);
 
   useEffect(() => {
     async function saveData() {
-      await AsyncStorage.setItem('@minhas_receitas', JSON.stringify(receitas));
+      try {
+        if (receitas.length > 0) await AsyncStorage.setItem('@minhas_receitas', JSON.stringify(receitas));
+      } catch (error) { console.error(error); }
     }
     saveData();
   }, [receitas]);
 
   async function adicionarReceita(novaReceita: Omit<Receita, 'id'>) {
-    const receitaComId = {
-      id: Date.now().toString(),
-      ...novaReceita
-    };
-    
-    setReceitas(oldReceitas => [receitaComId, ...oldReceitas]);
+    const receitaComId = { id: Date.now().toString(), ...novaReceita };
+    setReceitas(old => [receitaComId, ...old]);
   }
 
   async function removerReceita(id: string) {
-    setReceitas(oldReceitas => oldReceitas.filter(item => item.id !== id));
+    setReceitas(old => old.filter(item => item.id !== id));
+    // Força salvar vazio se for o último item (correção de bug comum)
+    if (receitas.length === 1) await AsyncStorage.removeItem('@minhas_receitas');
+  }
+
+  // A FUNÇÃO NOVA DO DEV 2
+  async function atualizarReceita(id: string, dadosAtualizados: Partial<Omit<Receita, 'id'>>) {
+    setReceitas(old => old.map(receita => 
+      receita.id === id ? { ...receita, ...dadosAtualizados } : receita
+    ));
   }
 
   return (
-    <ReceitasContext.Provider value={{ receitas, adicionarReceita, removerReceita }}>
+    <ReceitasContext.Provider value={{ receitas, adicionarReceita, removerReceita, atualizarReceita }}>
       {children}
     </ReceitasContext.Provider>
   );
@@ -63,6 +70,6 @@ export function ReceitasProvider({ children }: { children: ReactNode }) {
 
 export function useReceitas() {
   const context = useContext(ReceitasContext);
-  if (!context) throw new Error('useReceitas deve ser usado dentro d um ReceitasProvider');
+  if (!context) throw new Error('useReceitas deve ser usado dentro de um ReceitasProvider');
   return context;
 }

@@ -1,7 +1,4 @@
-import Slider from '@react-native-community/slider';
-import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,20 +8,36 @@ import {
   Text, TextInput, TouchableOpacity,
   View
 } from 'react-native';
+// Importamos 'Stack' para controlar o título da barra superior
+import Slider from '@react-native-community/slider';
+import { Picker } from '@react-native-picker/picker';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { useReceitas } from '../context/ReceitasContext';
 
 export default function AdicionarReceitas() {
   const router = useRouter();
-  const { adicionarReceita } = useReceitas();
+  const params = useLocalSearchParams();
+  const { adicionarReceita, atualizarReceita } = useReceitas();
 
-  const [nome, setNome] = useState('');
-  const [categoria, setCategoria] = useState('Salgado');
-  const [dificuldade, setDificuldade] = useState(3);
-  const [tempo, setTempo] = useState('');
-  const [ingredientes, setIngredientes] = useState('');
-  const [modoPreparo, setModoPreparo] = useState('');
+  const receitaParaEditar = params.receita ? JSON.parse(params.receita as string) : null;
+  const isEditing = !!receitaParaEditar;
+
+  const [nome, setNome] = useState(receitaParaEditar?.nome || '');
+  const [categoria, setCategoria] = useState(receitaParaEditar?.categoria || 'Salgado');
+  const [dificuldade, setDificuldade] = useState(receitaParaEditar?.dificuldade || 3);
+  const [tempo, setTempo] = useState(receitaParaEditar?.tempo?.replace(' min', '') || '');
+  const [ingredientes, setIngredientes] = useState(receitaParaEditar?.ingredientes?.join('\n') || '');
+  const [modoPreparo, setModoPreparo] = useState(receitaParaEditar?.modoPreparo || '');
+  const [imagem, setImagem] = useState('');
+  
   const [showPicker, setShowPicker] = useState(false);
+
+  useEffect(() => {
+    if (receitaParaEditar?.imagem) {
+      setImagem(receitaParaEditar.imagem);
+    }
+  }, [receitaParaEditar]);
 
   const handleSalvar = async () => {
     if (!nome.trim() || !ingredientes.trim()) {
@@ -32,19 +45,27 @@ export default function AdicionarReceitas() {
       return;
     }
 
-    try {
-      await adicionarReceita({
-        nome,
-        categoria,
-        dificuldade,
-        tempo: `${tempo} min`,
-        ingredientes: ingredientes.split('\n').filter(i => i.trim()),
-        modoPreparo,
-        imagem: 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400'
-      });
+    const dadosFormulario = {
+      nome,
+      categoria,
+      dificuldade,
+      tempo: `${tempo} min`,
+      ingredientes: ingredientes.split('\n').filter((i: string) => i.trim()),
+      modoPreparo,
+      imagem: imagem || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400'
+    };
 
-      Alert.alert('Sucesso', 'Receita salva!');
-      router.back(); 
+    try {
+      if (isEditing && receitaParaEditar?.id) {
+        await atualizarReceita(receitaParaEditar.id, dadosFormulario);
+        Alert.alert('Sucesso', 'Receita atualizada!');
+      } else {
+        await adicionarReceita(dadosFormulario);
+        Alert.alert('Sucesso', 'Receita criada!');
+      }
+      
+      router.dismiss();
+      router.replace('/'); 
     } catch (error) {
       console.error(error);
       Alert.alert('Erro', 'Não foi possível salvar.');
@@ -53,10 +74,18 @@ export default function AdicionarReceitas() {
 
   return (
     <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
+      style={{ flex: 1, backgroundColor: '#fff' }} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={100}
     >
+      {/* --- MÁGICA AQUI: Muda o título da barra superior --- */}
+      <Stack.Screen 
+        options={{ 
+          title: isEditing ? 'Editar Receita' : 'Nova Receita',
+          headerBackTitle: 'Voltar' 
+        }} 
+      />
+
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -77,7 +106,6 @@ export default function AdicionarReceitas() {
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Categoria</Text>
-          
           {Platform.OS === 'ios' ? (
             <View>
               <TouchableOpacity 
@@ -86,15 +114,11 @@ export default function AdicionarReceitas() {
               >
                 <Text style={{ fontSize: 16, color: '#1A1A1A' }}>{categoria}</Text>
               </TouchableOpacity>
-              
               {showPicker && (
                 <View style={styles.pickerWrapper}>
                   <Picker
                     selectedValue={categoria}
-                    onValueChange={(itemValue) => {
-                      setCategoria(itemValue);
-                      setShowPicker(false);
-                    }}
+                    onValueChange={(itemValue) => { setCategoria(itemValue); setShowPicker(false); }}
                     style={styles.picker}
                     itemStyle={{fontSize: 16, height: 120, color: '#000'}}
                   >
@@ -108,7 +132,6 @@ export default function AdicionarReceitas() {
               )}
             </View>
           ) : (
-
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={categoria}
@@ -188,7 +211,7 @@ export default function AdicionarReceitas() {
           onPress={handleSalvar}
           disabled={!nome.trim()}
         >
-          <Text style={styles.buttonText}>Salvar Receita</Text>
+          <Text style={styles.buttonText}>{isEditing ? 'Salvar Alterações' : 'Salvar Receita'}</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -204,18 +227,8 @@ const styles = StyleSheet.create({
   subLabel: { fontSize: 12, color: '#666' },
   input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, fontSize: 16, color: '#1A1A1A', backgroundColor: '#FAFAFA' },
   textArea: { minHeight: 100 },
-  pickerWrapper: { 
-    borderWidth: 1, 
-    borderColor: '#E5E7EB', 
-    borderRadius: 12, 
-    backgroundColor: '#FAFAFA', 
-    overflow: 'hidden',
-    marginTop: 5
-  },
-  picker: { 
-    width: '100%', 
-    height: Platform.OS === 'android' ? 50 : undefined 
-  },
+  pickerWrapper: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: '#FAFAFA', overflow: 'hidden', marginTop: 5 },
+  picker: { width: '100%', height: Platform.OS === 'android' ? 50 : undefined },
   button: { backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, elevation: 5 },
   buttonDisabled: { backgroundColor: '#ccc', elevation: 0 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },

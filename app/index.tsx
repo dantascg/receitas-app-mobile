@@ -5,11 +5,13 @@ import { COLORS } from '../constants/theme';
 import { useReceitas } from '../context/ReceitasContext';
 
 export default function Home() {
+  // inicializa o hook de navegação e recupera a lista de receitas
   const router = useRouter();
   
  
   const { receitas } = useReceitas();
 
+  // função que define o layout de cada card de receita e trata a navegação com params
   const renderReceita = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.card}
@@ -32,6 +34,7 @@ export default function Home() {
   );
 
   return (
+    // configura o container principal e a barra de status do dispositivo
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       
@@ -42,12 +45,14 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
+      {/* verifica se a lista ta vazia para renderizar o feedback ou a flatList com dados */}
       {receitas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>Nenhuma receita ainda 😔</Text>
           <Text style={styles.emptyText}>Clique no botão + para adicionar a primeira!</Text>
         </View>
       ) : (
+        // esse componente é otimizado para renderizar listas longas com rolagem vertical
         <FlatList
           data={receitas}
           keyExtractor={(item) => item.id}
@@ -57,6 +62,7 @@ export default function Home() {
         />
       )}
 
+      {/* botão posicionado no canto para acesso rápido a criação das receitas */}
       <TouchableOpacity 
         style={styles.fab} 
         onPress={() => router.push('/adicionarReceitas')}

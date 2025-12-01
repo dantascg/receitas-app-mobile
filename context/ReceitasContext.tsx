@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
+// definindo a estrutura de dados da receita e a interface dos metodos do contexto
 export type Receita = {
   id: string;
   nome: string;
@@ -24,6 +25,7 @@ const ReceitasContext = createContext<ReceitasContextData>({} as ReceitasContext
 export function ReceitasProvider({ children }: { children: ReactNode }) {
   const [receitas, setReceitas] = useState<Receita[]>([]);
 
+  // carrega as receitas do asyncStorage ao iniciar o componente (apenas uma vez)
   useEffect(() => {
     async function loadData() {
       try {
@@ -34,6 +36,7 @@ export function ReceitasProvider({ children }: { children: ReactNode }) {
     loadData();
   }, []);
 
+  // monitora alteracoes no estado receitas e sincroniza com o banco local
   useEffect(() => {
     async function saveData() {
       try {
@@ -43,24 +46,26 @@ export function ReceitasProvider({ children }: { children: ReactNode }) {
     saveData();
   }, [receitas]);
 
+  // cria uma nova receita e gera um ID unico baseado no timestamp atual
   async function adicionarReceita(novaReceita: Omit<Receita, 'id'>) {
     const receitaComId = { id: Date.now().toString(), ...novaReceita };
     setReceitas(old => [receitaComId, ...old]);
   }
 
+  // remove o item da lista e limpa o armazenamento se for o ultimo elemento
   async function removerReceita(id: string) {
     setReceitas(old => old.filter(item => item.id !== id));
-    // Força salvar vazio se for o último item (correção de bug comum)
     if (receitas.length === 1) await AsyncStorage.removeItem('@minhas_receitas');
   }
 
-  // A FUNÇÃO NOVA DO DEV 2
+  // atualiza apenas os campos enviados, mantendo o restante dos dados da receita
   async function atualizarReceita(id: string, dadosAtualizados: Partial<Omit<Receita, 'id'>>) {
     setReceitas(old => old.map(receita => 
       receita.id === id ? { ...receita, ...dadosAtualizados } : receita
     ));
   }
 
+  // disponibiliza o estado e funçoes CRUD para todos os componentes filhos
   return (
     <ReceitasContext.Provider value={{ receitas, adicionarReceita, removerReceita, atualizarReceita }}>
       {children}
@@ -68,6 +73,7 @@ export function ReceitasProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// hook que facilita o acesso ao contexto e garantir que esta dentro do provider
 export function useReceitas() {
   const context = useContext(ReceitasContext);
   if (!context) throw new Error('useReceitas deve ser usado dentro de um ReceitasProvider');

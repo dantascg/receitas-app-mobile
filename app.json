@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "minhas-receitas",
+    "name": "Minhas Receitas",
     "slug": "minhas-receitas",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.dantascg.minhasreceitas"
     },
     "web": {
       "output": "static",
@@ -43,6 +44,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8fabf832-9ff9-4e8b-9ae6-6ee2212760f1"
+      }
     }
   }
 }

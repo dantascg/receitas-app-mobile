@@ -6,6 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 
 export default function ModalScreen() {
   return (
+    // renderiza o container do modal com o texto de titulo e link de retorno
     <ThemedView style={styles.container}>
       <ThemedText type="title">This is a modal</ThemedText>
       <Link href="/" dismissTo style={styles.link}>
@@ -15,6 +16,7 @@ export default function ModalScreen() {
   );
 }
 
+// define o layout flexbox para centralizar o conteudo vertical e horizontalmente
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -1,50 +1,75 @@
-# Welcome to your Expo app 👋
+# 🍳 Minhas Receitas — Aplicativo Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 📖 Visão Geral
 
-## Get started
+**Minhas Receitas** é um aplicativo mobile desenvolvido em React Native que permite organizar, cadastrar e visualizar suas receitas favoritas de forma simples e prática.
 
-1. Install dependencies
+## 🌟 Funcionalidades
 
-   ```bash
-   npm install
-   ```
+- **Cadastro Completo:** Crie receitas com título, categoria, tempo de preparo, dificuldade, ingredientes e modo de preparo.
+- **Lista de Receitas:** Visualize todas as receitas cadastradas com filtro por categorias (doces, salgados, bebidas etc.).
+- **Edição e Exclusão:** Atualize informações ou remova receitas com confirmação de segurança.
+- **Persistência Local:** Todos os dados ficam salvos no dispositivo usando `AsyncStorage`.
+- **Interface Intuitiva:** UI simples e amigável, construída com componentes nativos do React Native.
 
-2. Start the app
+## 🎥 Demonstração em Vídeo
 
-   ```bash
-   npx expo start
-   ```
+Veja o aplicativo em funcionamento e confira as principais funcionalidades na prática:
 
-In the output, you'll find options to open the app in a
+👉 [**Assistir Demonstração no YouTube**](https://youtube.com/shorts/23wnI2ETTHo?si=4UvRIf8ryocIDHMt "null")
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📱 Download / Acesso
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 🔽 Instalação Rápida (APK / Build Expo)
 
-## Get a fresh project
+Você pode instalar ou testar o app através do link abaixo:
 
-When you're ready, run:
+👉 [**Acessar Build no Expo**](https://expo.dev/accounts/dantascg/projects/minhas-receitas/builds/2652e2a7-93bb-4d7f-9a81-adfed2023ce8 "null")
 
-```bash
-npm run reset-project
-```
+_Esse link permite abrir o app diretamente no Expo Go ou instalar a build disponibilizada._
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🛠️ (Opcional) Modo Desenvolvedor
 
-## Learn more
+Caso você queira executar o projeto em sua máquina local para desenvolvimento:
 
-To learn more about developing your project with Expo, look at the following resources:
+### Pré-requisitos
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Node.js
+- Git
+- App Expo Go (Android/iOS)
 
-## Join the community
+### Passo a passo
 
-Join our community of developers creating universal apps.
+1.  **Clone o repositório**
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+    ```
+    git clone https://github.com/dantascg/receitas-app-mobile.git
+    cd receitas-app-mobile
+
+    ```
+
+2.  **Instale as dependências**
+
+    ```
+    npm install
+
+    ```
+
+3.  **Inicie o ambiente Expo**
+
+    ```
+    npx expo start --tunnel -c
+
+    ```
+
+4.  **Abra no celular**
+
+    - Escaneie o QR Code exibido no terminal usando o app **Expo Go**.
+
+## 👥 Equipe
+
+**Leonardo Dantas:** Arquitetura do projeto, UI/UX, Integração de telas
+
+**Alex Vinicius:** Implementação do Context API, lógica de CRUD (Create/Read/Update/Delete) e persistência com AsyncStorage.
+
+**João Victor Amorim:** Desenvolvimento dos formulários, implementação de componentes nativos (Slider/Picker) e tela de Configurações

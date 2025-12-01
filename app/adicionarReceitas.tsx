@@ -9,47 +9,67 @@ import {
   View,
   Image
 } from 'react-native';
+
+// Slider pra escolher a dificuldade
+// Picker pra escolher categoria
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
+
+// Expo Router pra navegar entre telas e pegar parametros da rota
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+
+// Cores do tema e contexto de receitas (adicionar e atualizar)
 import { COLORS } from '../constants/theme';
 import { useReceitas } from '../context/ReceitasContext';
+
+// Biblioteca pra abrir a galeria
 import * as ImagePicker from 'expo-image-picker';
 
-// use require para assets locais
+// Imagem padrao caso nao adicione imagem na receita
 const blankImage = require('../assets/images/imagemBranca.png');
 
+// Componente principal da tela de adicionar/editar receita
 export default function AdicionarReceitas() {
+  // Router pra navegação e parametros vindos da rota de quando editamos uma receita
   const router = useRouter();
   const params = useLocalSearchParams();
+
+  // Funções de salvar e atualizar receitas
   const { adicionarReceita, atualizarReceita } = useReceitas();
 
+  // Converte o parametro "receita" enviado pela rota para objeto (modo edição)
   const receitaParaEditar = params.receita ? JSON.parse(params.receita as string) : null;
-  const isEditing = !!receitaParaEditar;
+  const isEditing = !!receitaParaEditar; // booleano pra saber se estamos editando
 
+  // Estados dos campos do formulário (iniciados com valores da receita se estiver sendo editado)
   const [nome, setNome] = useState(receitaParaEditar?.nome || '');
   const [categoria, setCategoria] = useState(receitaParaEditar?.categoria || 'Salgado');
   const [dificuldade, setDificuldade] = useState(receitaParaEditar?.dificuldade || 3);
   const [tempo, setTempo] = useState(receitaParaEditar?.tempo?.replace(' min', '') || '');
   const [ingredientes, setIngredientes] = useState(receitaParaEditar?.ingredientes?.join('\n') || '');
   const [modoPreparo, setModoPreparo] = useState(receitaParaEditar?.modoPreparo || '');
-  const [imagem, setImagem] = useState<string>('');
+  const [imagem, setImagem] = useState<string>(''); // URI da imagem selecionada (ou vazia)
 
+  // Controle pra mostrar ou ocultar o picker no iOS
   const [showPicker, setShowPicker] = useState(false);
 
+  // Se está editando uma receita que já possua imagem, coloca ela no estado ao montar
   useEffect(() => {
     if (receitaParaEditar?.imagem) {
       setImagem(receitaParaEditar.imagem);
     }
   }, [receitaParaEditar]);
 
+  // Função que abre a galeria e atualiza com a imagem nova
   const escolherImagem = async () => {
+    // Pede permissão pra acessar a galeria
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert("Permissão necessária", "Você precisa permitir acesso às fotos.");
       return;
     }
 
+    // Abre a galeria com opções (apenas imagens e permite edicao com mairo qualidade de imagem)
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -57,19 +77,24 @@ export default function AdicionarReceitas() {
       quality: 1,
     });
 
+    // Se o usuário escolheu uma imagem salva ela no estado
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImagem(result.assets[0].uri);
     }
   };
 
+  // Função chamada ao apertar "Salvar"
   const handleSalvar = async () => {
+    // Validação simples: nome e ingredientes são parametros obrigatorios
     if (!nome.trim() || !ingredientes.trim()) {
       Alert.alert('Atenção', 'Preencha nome e ingredientes!');
       return;
     }
 
+    // Resolve a URI da imagem local de fallback (imagem branca)
     const blankUri = Image.resolveAssetSource(blankImage).uri;
 
+    // Monta o objeto que será salvo
     const dadosFormulario = {
       nome,
       categoria,
@@ -81,6 +106,7 @@ export default function AdicionarReceitas() {
     };
 
     try {
+      // Se estamos editando, chama atualizar, se nao estiver, adiciona nova receita
       if (isEditing && receitaParaEditar?.id) {
         await atualizarReceita(receitaParaEditar.id, dadosFormulario);
         Alert.alert('Sucesso', 'Receita atualizada!');
@@ -89,6 +115,7 @@ export default function AdicionarReceitas() {
         Alert.alert('Sucesso', 'Receita criada!');
       }
       
+      // Volta pra tela inicial 
       router.replace('/'); 
     } catch (error) {
       console.error(error);
@@ -96,12 +123,14 @@ export default function AdicionarReceitas() {
     }
   };
 
+  // Render da tela: KeyboardAvoidingView pra o teclado não cobrir inputs
   return (
     <KeyboardAvoidingView 
       style={{ flex: 1, backgroundColor: '#fff' }} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={100}
     >
+      {/* Configura título da tela dinamicamente (Editar ou Nova Receita) */}
       <Stack.Screen 
         options={{ 
           title: isEditing ? 'Editar Receita' : 'Nova Receita',
@@ -109,6 +138,7 @@ export default function AdicionarReceitas() {
         }} 
       />
 
+      {/* ScrollView com os campos do formulário */}
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -116,6 +146,7 @@ export default function AdicionarReceitas() {
         keyboardDismissMode="on-drag"
       >
         
+        {/* Nome da receita */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Nome da Receita</Text>
           <TextInput
@@ -127,6 +158,7 @@ export default function AdicionarReceitas() {
           />
         </View>
 
+        {/* Imagem da receita */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Imagem da Receita</Text>
           <Image 
@@ -138,10 +170,12 @@ export default function AdicionarReceitas() {
           </TouchableOpacity>
         </View>
 
+        {/* Categoria */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Categoria</Text>
           {Platform.OS === 'ios' ? (
             <View>
+              {/* Mostra o valor atual e abrir o picker ao clicar */}
               <TouchableOpacity 
                 style={styles.input} 
                 onPress={() => setShowPicker(!showPicker)}
@@ -166,6 +200,7 @@ export default function AdicionarReceitas() {
               )}
             </View>
           ) : (
+            // Android: mostra o picker diretamente dentro de um wrapper
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={categoria}
@@ -182,6 +217,7 @@ export default function AdicionarReceitas() {
           )}
         </View>
 
+        {/* Dificuldade*/}
         <View style={styles.inputContainer}>
           <View style={styles.rowLabel}>
             <Text style={styles.label}>Dificuldade: {dificuldade}</Text>
@@ -200,6 +236,7 @@ export default function AdicionarReceitas() {
           />
         </View>
 
+        {/* Tempo em minutos */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Tempo (minutos)</Text>
           <TextInput
@@ -212,6 +249,7 @@ export default function AdicionarReceitas() {
           />
         </View>
 
+        {/* Ingredientes*/}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Ingredientes (um por linha)</Text>
           <TextInput
@@ -226,6 +264,7 @@ export default function AdicionarReceitas() {
           />
         </View>
 
+        {/* Modo de preparo*/}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Modo de Preparo</Text>
           <TextInput
@@ -240,6 +279,7 @@ export default function AdicionarReceitas() {
           />
         </View>
 
+        {/* Botão salvar */}
         <TouchableOpacity 
           style={[styles.button, !nome.trim() && styles.buttonDisabled]} 
           onPress={handleSalvar}
@@ -253,20 +293,43 @@ export default function AdicionarReceitas() {
   );
 }
 
+
+// Estilos da tela — separados por blocos com comentários acima (explicando cada grupo)
 const styles = StyleSheet.create({
+  // Container principal da tela
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+
+  // Cada bloco de input tem margem inferior
   inputContainer: { marginBottom: 20 },
+
+  // Label dos inputs (nome do campo)
   label: { fontSize: 16, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 8 },
+
+  // Linha que mostra label e sublabel
   rowLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   subLabel: { fontSize: 12, color: '#666' },
+
+  // Estilo base dos inputs
   input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, fontSize: 16, color: '#1A1A1A', backgroundColor: '#FAFAFA' },
+
+  // Ajuste específico para textareas (altura mínima)
   textArea: { minHeight: 100 },
 
+  // Preview da imagem selecionada da galeria
   previewImage: { width: '100%', height: 200, borderRadius: 12, marginBottom: 10 },
 
+  // Wrapper do picker
   pickerWrapper: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: '#FAFAFA', overflow: 'hidden', marginTop: 5 },
+
+  // Estilo do componente Picker
   picker: { width: '100%', height: Platform.OS === 'android' ? 50 : undefined },
+
+  // Botão principal (salvar / escolher imagem)
   button: { backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, elevation: 5 },
+
+  // Estado visual do botão quando desabilitado
   buttonDisabled: { backgroundColor: '#ccc', elevation: 0 },
+
+  // Texto dentro dos botões
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });

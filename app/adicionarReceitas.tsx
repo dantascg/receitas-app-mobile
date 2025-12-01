@@ -6,14 +6,18 @@ import {
   ScrollView,
   StyleSheet,
   Text, TextInput, TouchableOpacity,
-  View
+  View,
+  Image
 } from 'react-native';
-// Importamos 'Stack' para controlar o título da barra superior
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { useReceitas } from '../context/ReceitasContext';
+import * as ImagePicker from 'expo-image-picker';
+
+// use require para assets locais
+const blankImage = require('../assets/images/imagemBranca.png');
 
 export default function AdicionarReceitas() {
   const router = useRouter();
@@ -29,8 +33,8 @@ export default function AdicionarReceitas() {
   const [tempo, setTempo] = useState(receitaParaEditar?.tempo?.replace(' min', '') || '');
   const [ingredientes, setIngredientes] = useState(receitaParaEditar?.ingredientes?.join('\n') || '');
   const [modoPreparo, setModoPreparo] = useState(receitaParaEditar?.modoPreparo || '');
-  const [imagem, setImagem] = useState('');
-  
+  const [imagem, setImagem] = useState<string>('');
+
   const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
@@ -39,11 +43,32 @@ export default function AdicionarReceitas() {
     }
   }, [receitaParaEditar]);
 
+  const escolherImagem = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permissão necessária", "Você precisa permitir acesso às fotos.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImagem(result.assets[0].uri);
+    }
+  };
+
   const handleSalvar = async () => {
     if (!nome.trim() || !ingredientes.trim()) {
       Alert.alert('Atenção', 'Preencha nome e ingredientes!');
       return;
     }
+
+    const blankUri = Image.resolveAssetSource(blankImage).uri;
 
     const dadosFormulario = {
       nome,
@@ -52,7 +77,7 @@ export default function AdicionarReceitas() {
       tempo: `${tempo} min`,
       ingredientes: ingredientes.split('\n').filter((i: string) => i.trim()),
       modoPreparo,
-      imagem: imagem || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=400'
+      imagem: imagem || blankUri
     };
 
     try {
@@ -64,7 +89,6 @@ export default function AdicionarReceitas() {
         Alert.alert('Sucesso', 'Receita criada!');
       }
       
-      router.dismiss();
       router.replace('/'); 
     } catch (error) {
       console.error(error);
@@ -78,7 +102,6 @@ export default function AdicionarReceitas() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={100}
     >
-      {/* --- MÁGICA AQUI: Muda o título da barra superior --- */}
       <Stack.Screen 
         options={{ 
           title: isEditing ? 'Editar Receita' : 'Nova Receita',
@@ -102,6 +125,17 @@ export default function AdicionarReceitas() {
             onChangeText={setNome}
             placeholderTextColor="#999"
           />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Imagem da Receita</Text>
+          <Image 
+            source={imagem ? { uri: imagem } : blankImage} 
+            style={styles.previewImage} 
+          />
+          <TouchableOpacity style={styles.button} onPress={escolherImagem}>
+            <Text style={styles.buttonText}>Escolher Imagem</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.inputContainer}>
@@ -227,6 +261,9 @@ const styles = StyleSheet.create({
   subLabel: { fontSize: 12, color: '#666' },
   input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, fontSize: 16, color: '#1A1A1A', backgroundColor: '#FAFAFA' },
   textArea: { minHeight: 100 },
+
+  previewImage: { width: '100%', height: 200, borderRadius: 12, marginBottom: 10 },
+
   pickerWrapper: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: '#FAFAFA', overflow: 'hidden', marginTop: 5 },
   picker: { width: '100%', height: Platform.OS === 'android' ? 50 : undefined },
   button: { backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, elevation: 5 },
